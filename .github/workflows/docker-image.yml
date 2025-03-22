@@ -1,0 +1,39 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: "0 0 * * *"
+
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y curl
+      - name: Docker login
+        run: docker login -u "${{ vars.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
+      - name: debug
+        run: curl -I -s -o /dev/null -w '%header{content-disposition}' https://dl-cli.pstmn.io/download/latest/linux64 | grep -oP '\d+\.\d+\.\d+'
+      - name: Build the Docker image
+        run: export VERSION=$(curl -I -s -o /dev/null -w '%header{content-disposition}' https://dl-cli.pstmn.io/download/latest/linux64 | grep -oP '\d+\.\d+\.\d+') &&
+          curl -s https://api.github.com/repos/nsitbon/postman-cli/tags | grep "\"name\":\ \"$VERSION\"" || (
+          docker build --build-arg VERSION=$VERSION --file Dockerfile --tag nsitbon/postman-cli:$VERSION . &&
+          docker build --build-arg VERSION=$VERSION --file Dockerfile-pipe --tag nsitbon/postman-cli-pipe:$VERSION . &&
+          docker image tag nsitbon/postman-cli:$VERSION nsitbon/postman-cli:latest &&
+          docker image tag nsitbon/postman-cli-pipe:$VERSION nsitbon/postman-cli-pipe:latest &&
+          docker image push nsitbon/postman-cli:latest &&
+          docker image push nsitbon/postman-cli-pipe:latest &&
+          docker image push nsitbon/postman-cli:$VERSION &&
+          docker image push nsitbon/postman-cli-pipe:$VERSION &&
+          git tag $VERSION &&
+          git push origin main --tags
+          )

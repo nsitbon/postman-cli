@@ -1,0 +1,5 @@
+ARG VERSION
+FROM nsitbon/postman-cli:$VERSION
+COPY entrypoint.sh /
+COPY --from=busybox:1.37.0-glibc /bin/sh /bin/sh
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
