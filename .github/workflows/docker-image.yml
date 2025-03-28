@@ -27,7 +27,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build the Docker image
         run: export VERSION=$(curl -I -s -o /dev/null -w '%header{content-disposition}' https://dl-cli.pstmn.io/download/latest/linux64 | grep -oP '\d+\.\d+\.\d+') &&
-          curl -s https://api.github.com/repos/nsitbon/postman-cli/tags | grep "\"name\":\ \"$VERSION\"" || (
+          curl -s https://api.github.com/repos/${{ github.repository }}/tags | grep "\"name\":\ \"$VERSION\"" || (
           docker build --build-arg VERSION=$VERSION --file Dockerfile --tag ghcr.io/${{ github.repository }}:$VERSION . &&
           docker build --build-arg VERSION=$VERSION --file Dockerfile-pipe --tag ghcr.io/${{ github.repository }}-pipe:$VERSION . &&
           docker image tag ghcr.io/${{ github.repository }}:$VERSION ghcr.io/${{ github.repository }}:latest &&
